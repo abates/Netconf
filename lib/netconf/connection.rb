@@ -1,0 +1,3 @@
+
+require 'netconf/connection/base'
+
