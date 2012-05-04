@@ -8,11 +8,11 @@ Gem::Specification.new do |s|
   s.platform    = Gem::Platform::RUBY
   s.authors     = ["Andrew Bates"]
   s.email       = ["andrew.bates@verizon.com"]
-  s.homepage    = ""
+  s.homepage    = "https://github.com/abates/Netconf"
   s.summary     = %q{This gem provides a Ruby API into Juniper's Netconf interface on Infranet Controllers}
   s.description = %q{see summary}
 
-  s.rubyforge_project = "netconf"
+  s.rubyforge_project = ""
 
   s.files         = `git ls-files`.split("\n")
   s.test_files    = `git ls-files -- {test,spec,features}/*`.split("\n")
