@@ -1,5 +1,5 @@
 module Netconf
-  class RPCError
+  class RPCError < Exception
 
     attr_reader :info, :error_type, :error_tag, :error_severity
 
@@ -20,6 +20,8 @@ module Netconf
         @error_severity = reader.read_inner_xml if (@error_severity.nil? && reader.name == 'error-severity')
         @error_message = reader.read_inner_xml if (@error_message.nil? && reader.name == 'error-message')
       end
+
+      super(@error_message)
     end
 
     def to_s
