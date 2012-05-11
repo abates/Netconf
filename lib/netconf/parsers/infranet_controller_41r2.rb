@@ -30,6 +30,10 @@ module InfranetController41r2
     edit_object(InfranetController41r2.object_paths[:ipsec_policy], name, attributes, &block)
   end
 
+  def edit_auth_table name, attributes={}, &block
+    edit_object(InfranetController41r2.object_paths[:auth_table], name, attributes, &block)
+  end
+
   def new_role name, description
     edit_role(name, 'operation' => 'create') do |xml|
       xml.general do
@@ -108,6 +112,36 @@ module InfranetController41r2
     set_resource_roles(resource_name, roles)
   end
 
+  def new_auth_table name, description
+    edit_auth_table(name, 'operation' => 'create') do |xml|
+      xml.description description
+      xml.apply 'selected-roles'
+      xml.action 'always-provision-auth-table'
+    end
+  end
+  
+  def change_auth_table_name old_name, new_name
+    edit_auth_table(old_name, 'rename' => 'rename', 'name' => new_name)
+  end
+
+  def change_auth_table_description name, description
+    edit_auth_table(name) do |xml|
+      xml.description description
+    end
+  end
+  
+  def add_role_to_auth_table auth_table_name, role_name
+    roles = get_auth_table_roles(auth_table_name)
+    roles << role_name
+    set_auth_table_roles(resource_name, roles)
+  end
+
+  def remove_role_from_auth_table auth_table_name, role_name
+    roles = get_auth_table_roles(auth_table_name)
+    roles.delete(role_name)
+    set_auth_table_roles(resource_name, roles)
+  end
+
   def delete_resource name
     edit_resource(name, 'operation' => 'delete')
   end
@@ -131,6 +165,9 @@ module InfranetController41r2
     edit_ipsec_policy(name) do |xml|
       xml.description description
     end
+  end
+
+  def get_ipsec_policy_routes name
   end
 
   def set_ipsec_policy_routes name, routes
@@ -272,7 +309,7 @@ module InfranetController41r2
             end
           end
         end
-        if (role_name.nil? || roles.size > 0)
+        if (roles.size > 0)
           mappings[realm_name][name] = roles
         end
       end

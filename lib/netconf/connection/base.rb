@@ -15,7 +15,10 @@ module Netconf
       end
 
       def recv &block
-        @netconf_reader ||= Netconf::NetconfReader.new(@read, :debug => @options[:debug])
+        if (@netconf_reader.nil?)
+          @netconf_reader = Netconf::NetconfReader.new(:debug => @options[:debug])
+          @netconf_reader.read_loop(@read)
+        end
         block.call(@netconf_reader.reader)
       end
 

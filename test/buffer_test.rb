@@ -5,7 +5,8 @@ require 'netconf/buffer'
 class BufferTest < Test::Unit::TestCase
   def setup
     @rd, @wr = IO.pipe
-    @buffer = Netconf::NetconfReader.new @rd
+    @buffer = Netconf::NetconfReader.new
+    @buffer.read_loop(@rd)
   end
 
   def test_read

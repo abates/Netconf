@@ -21,4 +21,5 @@ Gem::Specification.new do |s|
 
   s.add_dependency('libxml-ruby', '>= 2.2.2')
   s.add_dependency('builder', '>= 3.0.0')
+  s.add_dependency('net-ssh', '>= 2.0.0')
 end
