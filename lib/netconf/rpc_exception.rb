@@ -10,7 +10,7 @@ module Netconf
         @errors = []
         @errors.push errors
       end
-      super(@errors.collect{|e| e.message}.join("\n"))
+      super(@errors.collect{|e| e.error_message}.join("\n"))
     end
   end
 end
