@@ -1,18 +1,16 @@
 #!/usr/bin/ruby
 
 require 'netconf/connection'
-require 'expect'
-require 'pty'
+require 'net/ssh'
 
 module Netconf
   module Connection
-    # The SSH connection will spawn an SSH command on the system
-    # and connect to the host with a given username and password
-    # this allows Netconf functionality to ride an SSH session
-    # as the transport
+    # This implementation uses a pury Ruby version of the SSH protocol
+    # Net::SSH
     class Ssh < Netconf::Connection::Base
       def initialize configuration
         super(configuration)
+        @debug = configuration[:debug]
         @timeout = configuration[:timeout] || 60
         @login_timeout = configuration[:login_timeout] || 10
         port = configuration[:port] || 22
@@ -25,13 +23,48 @@ module Netconf
           raise "Hostname, login and password must all be set in the configuration argument"
         end
 
-        (@read, @write, @pid) = PTY.spawn("stty -echo; /usr/bin/ssh -l #{login} #{hostname} netconf")
-        r = @read.expect(/password:/i, @login_timeout)
-        if (r.nil?)
-          raise "Failed to authenticate to host #{hostname}"
+        @netconf_reader = Netconf::NetconfReader.new(:debug => @options[:debug])
+        @ssh = Net::SSH.start(hostname, login, 
+                              :port => port, 
+                              :auth_methods => ['password'],
+                              :password => password, 
+                              :timeout => @login_timeout)
+        @ssh.open_channel do |channel|
+          channel.exec('netconf') do |ch, success|
+            @channel = ch
+            ch.on_data do |ch, data|
+              print "#{data}" if (@debug)
+              buff ||= ''
+              buff << data
+              buff = @netconf_reader.consume(buff)
+            end
+
+            ch.on_close do |ch|
+              @netconf_reader.close
+            end
+
+            ch.on_eof do |ch|
+              @netconf_reader.close
+            end
+          end
         end
-        @write.write("#{password}\n")
-        @write.flush
+
+        Thread.new do
+          @ssh.loop(0.1)
+        end
+      end
+
+      def send &block
+        @destination, @writer = IO.pipe
+        block.call(@writer)
+        @writer.write("]]>]]>\n")
+        @writer.close
+        data = @destination.read
+
+        # make sure the channel is setup
+        sleep 1 while (@channel.nil?)
+        print "#{data}" if (@debug)
+        @channel.send_data(data)
       end
     end
   end

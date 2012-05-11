@@ -2,64 +2,72 @@
 
 module Netconf
   class NetconfReader
-    def initialize input, args={}
-      raise "Input MUST be an IO object.  Supplied input was #{input.class}" unless (input.is_a? IO)
-      @source = input
+    def initialize args={}
       @readers = []
       @destination, @writer = IO.pipe
       @readers.push(@destination)
       @eom = '\]\]>\]\]>[\r\n]+'
       @partial_eom = '(?:\])|(?:\]\])|(?:\]\]\>)|(?:\]\]\>\])|(?:\]\]\>\]\])$'
       @debug = args[:debug] || false
-
-      Thread.abort_on_exception = true
-      Thread.new do
-        read_loop
-      end
     end
 
     def reader
       @readers.shift
     end
 
-    private
-      def read_loop
+    def close
+      @writer.flush
+      @writer.close
+    end
+
+    def read_loop(input)
+      raise "Input MUST be an IO object.  Supplied input was #{input.class}" unless (input.is_a? IO)
+      Thread.abort_on_exception = true
+      Thread.new do
         buff = nil
         while (true)
           begin
             if (buff.nil?)
-              buff = @source.readpartial(4096)
+              buff = input.readpartial(4096)
               print buff if (@debug)
             else
-              append = @source.readpartial(4096)
+              append = input.readpartial(4096)
               buff << append
               print append if (@debug)
             end
           rescue EOFError => e
-            @writer.flush
-            @writer.close
+            unless (buff.nil? || buff.empty?)
+              @writer.write(buff)
+            end
+            close
             break
           rescue IOError => e
           end
-          if (match=/#{@eom}/.match(buff))
-            @writer.write(match.pre_match)
-            @writer.flush
-            @writer.close
-            "#{match.post_match}".split(//).reverse.each do |c|
-              @source.ungetc(c[0])
-            end
-            #@destination, @writer = BufferedReader.pipe(:debug => @debug)
-            @destination, @writer = IO.pipe
-            @readers.push(@destination)
-            buff = nil
-          elsif (buff =~ /#{@partial_eom}$/)
-            next
-          else
-            @writer.write(buff)
-            buff = nil
-          end
+          buff = consume(buff)
         end
       end
+    end
+
+    def consume data
+      if (match=/#{@eom}/.match(data))
+        @writer.write(match.pre_match)
+        @writer.flush
+        @writer.close
+        @destination, @writer = IO.pipe
+        @readers.push(@destination)
+        post_match = match.post_match
+        if (post_match =~ /#{@eom}/)
+          return consume(post_match)
+        else
+          return match.post_match
+        end
+      elsif (data =~ /#{@partial_eom}$/)
+        return data
+      else
+        @writer.write(data)
+        return nil
+      end
+    end
   end
 
   class BufferedReader
