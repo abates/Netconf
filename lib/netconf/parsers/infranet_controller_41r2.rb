@@ -9,6 +9,7 @@ module InfranetController41r2
       :address_pool => 'configuration/uac/infranet-enforcer/ip-address-pools-policies/ip-address-pools-policy',
       :auth_table => 'configuration/uac/infranet-enforcer/auth-table-mapping-policies/auth-table-mapping-policy',
       :realm => 'configuration/users/user-realms/realm',
+      :infranet_enforcer => 'configuration/uac/infranet-enforcer/connections/infranet-enforcer',
     }
   end
 
@@ -112,11 +113,14 @@ module InfranetController41r2
     set_resource_roles(resource_name, roles)
   end
 
-  def new_auth_table name, description
+  def new_auth_table name, description, enforcers=[]
     edit_auth_table(name, 'operation' => 'create') do |xml|
       xml.description description
       xml.apply 'selected-roles'
       xml.action 'always-provision-auth-table'
+      enforcers.each do |enforcer|
+        xml.tag!('infranet-enforcer', enforcer)
+      end
     end
   end
   
@@ -165,9 +169,6 @@ module InfranetController41r2
     edit_ipsec_policy(name) do |xml|
       xml.description description
     end
-  end
-
-  def get_ipsec_policy_routes name
   end
 
   def set_ipsec_policy_routes name, routes
@@ -254,6 +255,18 @@ module InfranetController41r2
     get_objects(InfranetController41r2.object_paths[:realm], 'name')
   end
 
+  def get_infranet_enforcers
+    get_objects(InfranetController41r2.object_paths[:infranet_enforcer], 'name')
+  end
+
+  def get_ipsec_policy_routes name
+    get_objects(InfranetController41r2.object_paths[:ipsec_policy], 'manual/resources', name)
+  end
+
+  def get_resources resource_name
+    get_objects(InfranetController41r2.object_paths[:resource_policy], 'resources', resource_name)
+  end
+
   def set_mapping_roles realm_name, mapping, roles, user_names=[]
     edit_config('running') do |xml|
       build(xml, "configuration/users/user-realms/realm") do |xml|
@@ -290,14 +303,12 @@ module InfranetController41r2
       mappings[realm_name] = {}
       xml_string = build_xml('configuration/users/user-realms/realm') do |xml|
         xml.name realm_name
-        build(xml, 'role-mapping-rules/rule') do
-          xml.name
-          xml.roles
-        end
+        build(xml, 'role-mapping-rules/rule')
       end
       get_object('configuration/users/user-realms/realm/role-mapping-rules/rule', '', [], xml_string) do |reader|
         name = ""
-        roles = Set.new
+        users = Set.new
+        matched = false
         while (reader.read)
           break if (reader.name == 'rule')
           next if (reader.node_type == XML::Reader::TYPE_END_ELEMENT)
@@ -305,12 +316,15 @@ module InfranetController41r2
           if (reader.name == 'roles')
             matched_name = reader.read_string
             if (! matched_name.empty? && (role_name.nil? || role_name == matched_name))
-              roles << matched_name
+              matched = true
             end
           end
+          if (reader.name == 'user-names')
+            users << reader.read_string
+          end
         end
-        if (roles.size > 0)
-          mappings[realm_name][name] = roles
+        if (matched)
+          mappings[realm_name][name] = users
         end
       end
     end
@@ -374,13 +388,17 @@ module InfranetController41r2
       objects = Set.new
       object_tag = object_path.split(/\//)
       object_tag = object_tag.last
+      end_tag = match_element
+      if (end_tag =~ /\//)
+        end_tag = end_tag.split(/\//).last
+      end
       get_object(object_path, object_name, ['name', match_element]) do |reader|
         matched = false
         while (reader.read)
           break if (reader.name == object_tag)
           next if (reader.node_type == XML::Reader::TYPE_END_ELEMENT)
           name = reader.read_string if (reader.name == 'name')
-          if (reader.name == match_element)
+          if (reader.name == end_tag)
             object = reader.read_string
             unless (block.nil?)
               object = block.call(name, object)
@@ -413,13 +431,17 @@ module InfranetController41r2
       path = path.split(/\//) if (path.is_a? String)
       while true do
         if (path.length == 0)
-          block.call xml
+          block.call xml unless (block.nil?)
           return
         end
         element = path.shift
         unless (element.nil? || element == '')
-          xml.tag! element do
-            build xml, path, &block
+          if (path.length == 0 && block.nil?)
+            xml.tag! element
+          else
+            xml.tag! element do
+              build xml, path, &block
+            end
           end
           return
         end
@@ -433,7 +455,7 @@ module InfranetController41r2
         xml = build_xml(path) do |xml|
           xml.name name unless (name == '')
           selectors.each do |selector|
-            xml.tag! selector
+            build(xml, selector)
           end
         end
       end
