@@ -150,12 +150,15 @@ module InfranetController41r2
     edit_resource(name, 'operation' => 'delete')
   end
 
-  def new_ipsec_policy name, description, routes, exceptions=[]
+  def new_ipsec_policy name, description, routes, enforcers=[], exceptions=[]
     edit_ipsec_policy(name, 'operation' => 'create') do |xml|
       xml.description description
       xml.manual do
         routes.each do |route|
           xml.resources route
+        end
+        enforcers.each do |enforcer|
+          xml.tag!('infranet-enforcer', enforcer)
         end
         exceptions.each do |exception|
           xml.tag!('exception-to-resource', exception)
