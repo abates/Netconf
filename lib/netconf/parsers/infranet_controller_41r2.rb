@@ -157,12 +157,12 @@ module InfranetController41r2
         routes.each do |route|
           xml.resources route
         end
-        enforcers.each do |enforcer|
-          xml.tag!('infranet-enforcer', enforcer)
-        end
         exceptions.each do |exception|
           xml.tag!('exception-to-resource', exception)
         end
+      end
+      enforcers.each do |enforcer|
+        xml.tag!('infranet-enforcer', enforcer)
       end
       xml.apply('selected-roles')
     end
@@ -171,6 +171,14 @@ module InfranetController41r2
   def change_ipsec_policy_description name, description
     edit_ipsec_policy(name) do |xml|
       xml.description description
+    end
+  end
+
+  def set_ipsec_policy_enforcers name, enforcers
+    edit_ipsec_policy(name) do |xml|
+      enforcers.each do |enforcer|
+        xml.tag!('infranet-enforcer', enforcer)
+      end
     end
   end
 
