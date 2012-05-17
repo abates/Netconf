@@ -150,7 +150,7 @@ module InfranetController41r2
     edit_resource(name, 'operation' => 'delete')
   end
 
-  def new_ipsec_policy name, description, routes, enforcer, exceptions=[]
+  def new_ipsec_policy name, description, routes, enforcer, zone, exceptions=[]
     edit_ipsec_policy(name, 'operation' => 'create') do |xml|
       xml.description description
       xml.manual do
@@ -162,6 +162,7 @@ module InfranetController41r2
         end
       end
       xml.tag!('infranet-enforcer', enforcer)
+      xml.tag!('destination-zone', zone)
       xml.apply('selected-roles')
     end
   end
@@ -240,6 +241,26 @@ module InfranetController41r2
 
   def get_ipsec_policy_roles ipsec_policy_name
     get_roles_for_object(InfranetController41r2.object_paths[:ipsec_policy], ipsec_policy_name)
+  end
+
+  def get_infranet_enforcer_roles enforcer
+    roles = []
+    get_object(InfranetController41r2.object_paths[:ipsec_policy], '', []) do |reader|
+      matched = false
+      enforcer_roles = []
+      while(reader.read)
+        break if (reader.name == 'ipsec-routing-policy')
+        next if (reader.node_type == XML::Reader::TYPE_END_ELEMENT)
+        if (reader.name == 'infranet-enforcer' && reader.read_string == enforcer)
+          matched = true
+        end
+        if (reader.name == 'roles')
+          enforcer_roles << reader.read_string
+        end
+      end
+      roles.push(*enforcer_roles) if (matched)
+    end
+    roles
   end
 
   def get_role_auth_tables role_name
