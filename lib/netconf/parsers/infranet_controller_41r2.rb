@@ -150,7 +150,7 @@ module InfranetController41r2
     edit_resource(name, 'operation' => 'delete')
   end
 
-  def new_ipsec_policy name, description, routes, enforcer, zone, exceptions=[]
+  def new_ipsec_policy name, description, enforcer, zone, routes, exceptions=[]
     edit_ipsec_policy(name, 'operation' => 'create') do |xml|
       xml.description description
       xml.manual do
@@ -285,6 +285,14 @@ module InfranetController41r2
 
   def get_infranet_enforcers
     get_objects(InfranetController41r2.object_paths[:infranet_enforcer], 'name')
+  end
+
+  def get_auth_tables
+    get_objects(InfranetController41r2.object_paths[:auth_table], 'name')
+  end
+
+  def get_ipsec_policies
+    get_objects(InfranetController41r2.object_paths[:ipsec_policy], 'name')
   end
 
   def get_ipsec_policy_routes name
