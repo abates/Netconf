@@ -94,10 +94,12 @@ module InfranetController41r2
     end
   end
 
-  def set_resource_access name, access
+  def set_resource_access name, accesses
     edit_resource(name) do |xml|
       xml.action 'allow-access'
-      xml.resources access
+      accesses.each do |access|
+        xml.resources access
+      end
     end
   end
 
