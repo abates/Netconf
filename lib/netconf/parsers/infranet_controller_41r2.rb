@@ -95,7 +95,7 @@ module InfranetController41r2
   end
 
   def set_resource_access name, access
-    edit_resource(name, 'operation' => 'create') do |xml|
+    edit_resource(name) do |xml|
       xml.action 'allow-access'
       xml.resources access
     end
@@ -137,13 +137,13 @@ module InfranetController41r2
   def add_role_to_auth_table auth_table_name, role_name
     roles = get_auth_table_roles(auth_table_name)
     roles << role_name
-    set_auth_table_roles(resource_name, roles)
+    set_auth_table_roles(auth_table_name, roles)
   end
 
   def remove_role_from_auth_table auth_table_name, role_name
     roles = get_auth_table_roles(auth_table_name)
     roles.delete(role_name)
-    set_auth_table_roles(resource_name, roles)
+    set_auth_table_roles(auth_table_name, roles)
   end
 
   def delete_resource name
@@ -202,13 +202,13 @@ module InfranetController41r2
   def add_role_to_ipsec_policy ipsec_policy, role_name
     roles = get_ipsec_policy_roles(ipsec_policy)
     roles << role_name
-    set_ipsec_policy_roles(resource_name, roles)
+    set_ipsec_policy_roles(ipsec_policy, roles)
   end
 
   def remove_role_from_ipsec_policy ipsec_policy, role_name
     roles = get_ipsec_policy_roles(ipsec_policy)
     roles.delete(role_name)
-    set_ipsec_policy_roles(resource_name, roles)
+    set_ipsec_policy_roles(ipsec_policy, roles)
   end
 
   def set_ipsec_policy_roles name, roles
