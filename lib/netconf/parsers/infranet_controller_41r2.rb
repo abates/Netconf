@@ -14,9 +14,8 @@ module InfranetController41r2
   end
 
   def self.has_capability? cap
-    cap =~ /http:\/\/xml.juniper.net\/dmi\/ive-ic\/4.1R2/ ||
-    cap =~ /http:\/\/xml.juniper.net\/dmi\/ive-ic\/4.1R5/ ||
-    cap =~ /http:\/\/xml.juniper.net\/dmi\/ive-ic\/4.1R7/
+    cap =~ /http:\/\/xml.juniper.net\/dmi\/ive-ic\/4.1/
+    cap =~ /http:\/\/xml.juniper.net\/dmi\/ive-ic\/4.2/
   end
 
   def edit_role name, attributes={}, &block

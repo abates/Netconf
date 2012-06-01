@@ -23,12 +23,14 @@ module Netconf
       end
 
       def close
-        @read.close unless (@read.closed?)
-        @write.flush
-        if (@buffered_writer.nil?)
-          @write.close
-        else
-          @buffered_writer.close
+        @read.close unless (@read.nil? || @read.closed?)
+        unless (@write.nil?)
+          @write.flush
+          if (@buffered_writer.nil?)
+            @write.close
+          else
+            @buffered_writer.close
+          end
         end
       end
 
