@@ -201,6 +201,10 @@ module InfranetController41r2
     end
   end
 
+  def delete_ipsec_policy name
+    edit_ipsec_policy(name, 'operation' => 'delete')
+  end
+
   def add_role_to_ipsec_policy ipsec_policy, role_name
     roles = get_ipsec_policy_roles(ipsec_policy)
     roles << role_name
