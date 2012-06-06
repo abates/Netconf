@@ -41,6 +41,9 @@ module InfranetController41r2
           xml.description description
         end
       end
+      xml.agent do
+        xml.tag!('install-agent', 'false')
+      end
     end
   end
 
@@ -151,7 +154,7 @@ module InfranetController41r2
     edit_resource(name, 'operation' => 'delete')
   end
 
-  def new_ipsec_policy name, description, enforcer, zone, routes, exceptions=[]
+  def new_ipsec_policy name, description, enforcer, zone, routes, exceptions=[], options={}
     edit_ipsec_policy(name, 'operation' => 'create') do |xml|
       xml.description description
       xml.manual do
@@ -161,6 +164,9 @@ module InfranetController41r2
         exceptions.each do |exception|
           xml.tag!('exception-to-resource', exception)
         end
+      end
+      options.each do |name, value|
+        xml.tag!(name, value)
       end
       xml.tag!('infranet-enforcer', enforcer)
       xml.tag!('destination-zone', zone)
