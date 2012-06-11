@@ -23,6 +23,7 @@ module Netconf
           raise "Hostname, login and password must all be set in the configuration argument"
         end
 
+        @buff = ''
         @netconf_reader = Netconf::NetconfReader.new(:debug => @options[:debug])
         @ssh = Net::SSH.start(hostname, login, 
                               :port => port, 
@@ -34,9 +35,9 @@ module Netconf
             @channel = ch
             ch.on_data do |ch, data|
               print "#{data}" if (@debug)
-              buff ||= ''
-              buff << data
-              buff = @netconf_reader.consume(buff)
+              @buff ||= ''
+              @buff << data
+              @buff = @netconf_reader.consume(@buff)
             end
 
             ch.on_close do |ch|
@@ -49,6 +50,7 @@ module Netconf
           end
         end
 
+        Thread.abort_on_exception = true
         Thread.new do
           @ssh.loop(0.1)
         end

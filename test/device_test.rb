@@ -78,6 +78,16 @@ _EOF
     end
   end
 
+  def test_multiple_exceptions
+    @connection.pipe_write.write '<rpc-reply xmlns="http://xml.juniper.net/ive-ic/4.2R1.1"><rpc-error xmlns="urn:ietf:params:xml:ns:netconf:base:1.0"><error-type>application</error-type><error-tag>operation-failed</error-tag><error-severity>error</error-severity><error-message>test1</error-message></rpc-error><rpc-error xmlns="urn:ietf:params:xml:ns:netconf:base:1.0"><error-type>application</error-type><error-tag>operation-failed</error-tag><error-severity>error</error-severity><error-message>test2</error-message></rpc-error><rpc-error xmlns="urn:ietf:params:xml:ns:netconf:base:1.0"><error-type>application</error-type><error-tag>operation-failed</error-tag><error-severity>error</error-severity><error-message>test3</error-message></rpc-error><rpc-error xmlns="urn:ietf:params:xml:ns:netconf:base:1.0"><error-type>application</error-type><error-tag>operation-failed</error-tag><error-severity>error</error-severity><error-message>test4</error-message></rpc-error><rpc-error xmlns="urn:ietf:params:xml:ns:netconf:base:1.0"><error-type>application</error-type><error-tag>operation-failed</error-tag><error-severity>error</error-severity><error-message>test5</error-message></rpc-error></rpc-reply>]]>]]>' + "\n"
+    @connection.pipe_write.flush
+
+    assert_raise Netconf::RPCException do
+      d = Netconf::Device.new(@connection)
+      content = d.recv_rpc
+    end
+  end
+
   def test_send_rpc
     @connection.pipe_write.close
     d = Netconf::Device.new(@connection)

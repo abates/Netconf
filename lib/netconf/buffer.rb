@@ -1,4 +1,5 @@
 
+require 'thread'
 
 module Netconf
   class NetconfReader
@@ -9,10 +10,18 @@ module Netconf
       @eom = '\]\]>\]\]>[\r\n]+'
       @partial_eom = '(?:\])|(?:\]\])|(?:\]\]\>)|(?:\]\]\>\])|(?:\]\]\>\]\])$'
       @debug = args[:debug] || false
+
+      @reader_sem = Mutex.new
+      @reader_cv = ConditionVariable.new
     end
 
     def reader
-      @readers.shift
+      r = nil
+      @reader_sem.synchronize do
+        @reader_cv.wait(@reader_sem) if (@readers.size == 0)
+        r = @readers.shift
+      end
+      return r
     end
 
     def close
@@ -36,6 +45,7 @@ module Netconf
               print append if (@debug)
             end
           rescue EOFError => e
+            STDERR.print "EOFError #{e}"
             unless (buff.nil? || buff.empty?)
               @writer.write(buff)
             end
@@ -51,10 +61,12 @@ module Netconf
     def consume data
       if (match=/#{@eom}/.match(data))
         @writer.write(match.pre_match)
-        @writer.flush
-        @writer.close
+        close
         @destination, @writer = IO.pipe
-        @readers.push(@destination)
+        @reader_sem.synchronize do
+          @readers.push(@destination)
+          @reader_cv.signal
+        end
         post_match = match.post_match
         if (post_match =~ /#{@eom}/)
           return consume(post_match)
