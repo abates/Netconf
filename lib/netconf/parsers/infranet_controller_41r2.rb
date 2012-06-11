@@ -150,6 +150,12 @@ module InfranetController41r2
     set_auth_table_roles(auth_table_name, roles)
   end
 
+  def remove_role_from_address_pool address_pool, role_name
+    roles = get_address_pool_roles(address_pool)
+    roles.delete(role_name)
+    set_address_pool_roles(address_pool, roles)
+  end
+
   def delete_resource name
     edit_resource(name, 'operation' => 'delete')
   end
@@ -300,6 +306,10 @@ module InfranetController41r2
 
   def get_auth_tables
     get_objects(InfranetController41r2.object_paths[:auth_table], 'name')
+  end
+
+  def get_address_pools
+    get_objects(InfranetController41r2.object_paths[:address_pool], 'name')
   end
 
   def get_ipsec_policies
