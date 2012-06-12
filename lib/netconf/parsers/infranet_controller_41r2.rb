@@ -14,7 +14,7 @@ module InfranetController41r2
   end
 
   def self.has_capability? cap
-    cap =~ /http:\/\/xml.juniper.net\/dmi\/ive-ic\/4.1/
+    cap =~ /http:\/\/xml.juniper.net\/dmi\/ive-ic\/4.1/ ||
     cap =~ /http:\/\/xml.juniper.net\/dmi\/ive-ic\/4.2/
   end
 
