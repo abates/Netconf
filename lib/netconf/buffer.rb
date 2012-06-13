@@ -25,8 +25,10 @@ module Netconf
     end
 
     def close
-      @writer.flush
-      @writer.close
+      unless(@writer.closed?)
+        @writer.flush
+        @writer.close
+      end
     end
 
     def read_loop(input)
