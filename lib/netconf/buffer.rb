@@ -40,14 +40,14 @@ module Netconf
           begin
             if (buff.nil?)
               buff = input.readpartial(4096)
-              print buff if (@debug)
+              STDERR.print buff if (@debug)
             else
               append = input.readpartial(4096)
               buff << append
-              print append if (@debug)
+              STDERR.print append if (@debug)
             end
           rescue EOFError => e
-            STDERR.print "EOFError #{e}"
+            STDERR.print "EOFError #{e}\n"
             unless (buff.nil? || buff.empty?)
               @writer.write(buff)
             end
@@ -98,13 +98,13 @@ module Netconf
 
     def read length=nil, buffer=nil
       ret = @reader.read(length, buffer)
-      print "#{ret}" if (@debug)
+      STDERR.print "#{ret}" if (@debug)
       return ret
     end
 
     def readline sep_string=$/
       line = @reader.readline(sep_string)
-      print "#{line}" if (@debug)
+      STDERR.print "#{line}" if (@debug)
       return line
     end
 
@@ -121,12 +121,12 @@ module Netconf
     end
 
     def << obj
-      print obj.to_s if (@debug)
+      STDERR.print obj.to_s if (@debug)
       @destination << obj
     end
 
     def write string
-      print string.to_s if (@debug)
+      STDERR.print string.to_s if (@debug)
       @destination.write(string)
     end
 

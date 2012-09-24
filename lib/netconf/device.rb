@@ -10,27 +10,27 @@ require 'netconf/string_methods'
 
 module Netconf
   class Device
-    attr_reader :capabilities, :message_id
+    attr_reader :capabilities, :remote_capabilities, :message_id
 
     DEFAULT_CAPABILITIES = [
       'urn:ietf:params:xml:ns:netconf:base:1.0',
     ]
 
     def initialize connection, options = {}
-      @config_plugins = []
-      plugin_path = File.expand_path('../parsers', __FILE__)
-      Dir.entries(plugin_path).each do |file|
+      @capabilities = []
+      capabilities_path = File.expand_path('../capabilities', __FILE__)
+      Dir.entries(capabilities_path).each do |file|
         next if (file == '.' || file == '..')
         class_name = file.classify
         class_name.gsub!(/\.rb$/, '')
         if (file =~ /\.rb$/)
-          require "#{plugin_path}/#{file}"
+          require "#{capabilities_path}/#{file}"
           begin
             klass = Object.const_get(class_name)
           rescue NameError => e
-            raise "Expected #{plugin_path}/#{file} to declare #{class_name}"
+            raise "Expected #{capabilities_path}/#{file} to declare #{class_name}"
           end
-          @config_plugins.push(klass)
+          @capabilities.push(klass)
         end
       end
 
@@ -39,66 +39,6 @@ module Netconf
       send_and_recv_hello
     end
 
-    # Gracefully close the netconf session with the server and close
-    # the associated connection
-    def close
-      begin
-        send_rpc do |xml|
-          xml.tag! 'close-session'
-        end
-        recv_rpc
-      rescue => e
-        STDERR.puts "Failed to send or receive close-session: #{e}"
-      ensure
-        @connection.close
-      end
-    end
-
-    # Edit a piece of config in place.  The called block should produce
-    # the xml config to be changed
-    def edit_config target, &block
-      send_rpc do |xml|
-        xml.tag!('edit-config') do
-          xml.target do
-            xml.tag! target
-          end
-          xml.config("xmlns:xc" => "urn:ietf:params:xml:ns:netconf:base:1.0") do
-            block.call xml
-          end
-        end
-      end
-      recv_rpc
-    end
-
-    # get_config will wrap the xml content created by the called block
-    # with get-config tags and then pass the content to an RPC call.  The
-    # method will then return the result from the server.  The block should
-    # produce the appropriate XML to use as a filter to send to the remote
-    # server
-    #
-    # If no block is passed in then the results will not be filtered and
-    # the entire config returned from the server will be returned to the
-    # caller
-    #
-    # Source should be specified as which source config to use (ie 'running').
-    #
-    def get_config source, config, &block
-      send_rpc do |xml|
-        xml.tag!('get-config') do
-          xml.source do
-            xml.running
-          end
-          unless (config.nil? || config =~ /^\s*$/)
-            xml.filter 'type' => 'subtree' do
-              xml << config
-            end
-          end
-        end
-      end
-      recv_rpc &block
-    end
-
-    # This method will wrap a request in rpc tags including the
     # appropriate mesage-id attribute.  Once the initial rpc
     # tag has been sent the block will be called and the XML
     # builder object will be passed to the block.  The block
@@ -192,21 +132,20 @@ module Netconf
         @connection.recv do |ins|
           begin
             reader = XML::Reader.io(ins)
-            @capabilities = []
+            @remote_capabilities = []
             while (reader.read)
               if (reader.name == 'capability')
-                capability = reader.read_inner_xml
-                next if (capability.nil? || capability =~ /^\s*$/)
-                @capabilities.push capability
-                @config_plugins.each do |plugin|
-                  if plugin.has_capability?(capability)
-                    extend plugin
+                remote_capability = reader.read_inner_xml
+                next if (remote_capability.nil? || remote_capability =~ /^\s*$/)
+                @remote_capabilities.push remote_capability
+                @capabilities.each do |capability|
+                  if capability.has_capability?(remote_capability)
+                    extend capability
                   end
                 end
               end
             end
-            raise "No capabilities received from device" if @capabilities.length == 0
-            #puts @capabilities.join("\n")
+            raise "No capabilities received from device" if @remote_capabilities.length == 0
           rescue => e
             @connection.close
             raise ConnectionException.new("Failed to send and receive hello: #{e}")

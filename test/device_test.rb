@@ -22,12 +22,12 @@ _EOF
 <?xml version="1.0" encoding="UTF-8"?>
 <hello xmlns="urn:ietf:params:xml:ns:netconf:base:1.0">
  <capabilities>
-  <capability>urn:ietf:params:xml:ns:netconf:base:1.0</capability>
+  <capability>test</capability>
  </capabilities>
 </hello>
 ]]>]]>
 _EOF
-    @connection = Netconf::Connection::Pipe.new
+    @connection = Netconf::Connection::Pipe.new(:debug => false)
     @connection.pipe_write.write @hello
     @connection.pipe_write.flush
   end
@@ -43,19 +43,8 @@ _EOF
 
   def test_capabilities
     @connection.pipe_write.close
-
-    expected_hello = <<_EOF
-<hello>
- <capabilities>
-  <capability>urn:ietf:params:xml:ns:netconf:base:1.0</capability>
- </capabilities>
-</hello>
-]]>]]>
-_EOF
     d = Netconf::Device.new(@connection)
-    assert_equal expected_hello, @connection.pipe_read.read_nonblock(1024)
-
-    assert_equal ["urn:ietf:params:xml:ns:netconf:base:1.0"], d.capabilities
+    assert_equal ["test"], d.remote_capabilities
   end
 
   def test_rpc_exception
@@ -121,36 +110,6 @@ _EOF
       content = reader.read_inner_xml
     end
     assert content
-  end
-
-  def test_get_config
-    @connection.pipe_write.write "#{@rpc_reply}]]>]]>\n"
-    @connection.pipe_write.flush
-
-    d = Netconf::Device.new(@connection)
-    @connection.pipe_read.read_nonblock(1024)
-
-    xml = "<config><value /></config>"
-    output = ""
-    d.get_config 'running', xml do |reader|
-      output = reader.read_inner_xml
-    end
-    expected_output = "\n    <config xmlns=\"urn:ietf:params:xml:ns:netconf:base:1.0\">\n      <value>Some Value</value>\n    </config>\n  "
-    assert_equal expected_output, output
-    expected_output = <<_EOF
-<rpc message-id="1">
- <get-config>
-  <source>
-   <running/>
-  </source>
-  <filter type="subtree">
-<config><value /></config>  </filter>
- </get-config>
-</rpc>
-]]>]]>
-_EOF
-    output = @connection.pipe_read.read_nonblock(1024)
-    assert_equal expected_output, output
   end
 end
 

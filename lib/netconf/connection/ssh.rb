@@ -34,7 +34,7 @@ module Netconf
           channel.exec('netconf') do |ch, success|
             @channel = ch
             ch.on_data do |ch, data|
-              print "#{data}" if (@debug)
+              STDERR.print "#{data}" if (@debug)
               @buff ||= ''
               @buff << data
               @buff = @netconf_reader.consume(@buff)
@@ -65,7 +65,7 @@ module Netconf
 
         # make sure the channel is setup
         sleep 1 while (@channel.nil?)
-        print "#{data}" if (@debug)
+        STDERR.print "#{data}" if (@debug)
         @channel.send_data(data)
       end
     end

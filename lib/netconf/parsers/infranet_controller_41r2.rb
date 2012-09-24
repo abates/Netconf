@@ -506,10 +506,10 @@ module InfranetController41r2
       target
     end
  
-    def get_object path, name, selectors=[], xml=nil, &block
+    def get_object path, name, selectors=[], filter=nil, &block
       object = nil
-      if (xml.nil?)
-        xml = build_xml(path) do |xml|
+      if (filter.nil?)
+        filter = build_xml(path) do |xml|
           xml.name name unless (name == '')
           selectors.each do |selector|
             build(xml, selector)
@@ -519,7 +519,7 @@ module InfranetController41r2
 
       path = path.split(/\//)
       current_path = []
-      config = get_config('running', xml) do |reader|
+      config = get_config(filter, 'running') do |reader|
         while (reader.read)
           break if (reader.name == 'data')
           current_path.push(reader.name) if (reader.node_type == XML::Reader::TYPE_ELEMENT)

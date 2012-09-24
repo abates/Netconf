@@ -12,8 +12,8 @@ module Netconf
     # to allow data to be injected into the two pipes.
     class Pipe < Netconf::Connection::Base
       attr_reader :pipe_read, :pipe_write
-      def initialize
-        super
+      def initialize options={}
+        super(options)
         (@read, @pipe_write) = IO.pipe
         (@pipe_read, @write) = IO.pipe
       end
