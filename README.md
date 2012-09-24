@@ -14,7 +14,7 @@ the examples/ directory
 Examples
 --------
 
-Connecting to a device (default port 22)
+### Connecting to a device (default port 22)
     begin
       n = Netconf::Factory.create(
         :transport => 'ssh',
@@ -29,7 +29,7 @@ Connecting to a device (default port 22)
       end
     end
 
-Connecting to a device (alternate port)
+### Connecting to a device (alternate port)
     begin
       n = Netconf::Factory.create(
         :transport => 'ssh',
@@ -45,7 +45,7 @@ Connecting to a device (alternate port)
       end
     end
 
-Getting the entire config
+### Getting the entire config
     begin
       n = Netconf::Factory.create(
         :transport => 'ssh',
@@ -62,7 +62,7 @@ Getting the entire config
       end
     end
 
-Getting a specific block of config
+### Getting a specific block of config
     begin
       n = Netconf::Factory.create(
         :transport => 'ssh',
@@ -86,7 +86,7 @@ Getting a specific block of config
       end
     end
 
-Setting a config value
+### Setting a config value
 
 We use builder to build XML blocks to send to the device.  This is very efficient since
 the xml is being sent to the device (as opposed to being built in memory) as it is
@@ -118,7 +118,7 @@ instance of the builder object.
     end
 
 
-Adding new capabilities
+### Adding new capabilities
 
 It is also very easy to add new capabilities.  Capabilities are added in the form of
 Ruby modules.  Any module that implements a set of capabilities need only have a
