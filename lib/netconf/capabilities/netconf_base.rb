@@ -32,7 +32,7 @@ module NetconfBase
       end
     end
     if (options[:recv_block].nil?)
-      recv_rpc
+      return recv_rpc
     else
       recv_rpc &options[:recv_block]
     end
@@ -41,7 +41,7 @@ module NetconfBase
   # Edit a piece of config in place.  The called block should produce
   # the xml config to be changed
   def edit_config target, &block
-    execute_operation('edit-config', :target => target, :config_block => config_block)
+    execute_operation('edit-config', :target => target, :config_block => block)
   end
 
   # get_config will wrap the xml content created by the called block

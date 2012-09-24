@@ -91,6 +91,7 @@ module Netconf
     def recv_rpc &block
       payload = nil
       errors = []
+      xml_retval = nil
       @connection.recv do |ins|
         reader = XML::Reader.io(ins)
         while (reader.read)
@@ -102,7 +103,11 @@ module Netconf
           when 'data'
             if (reader.node_type == XML::Reader::TYPE_ELEMENT)
               ok = true
-              block.call(reader) if (block)
+              if (block)
+                block.call(reader)
+              else
+                xml_retval = reader.read_inner_xml
+              end
             end
           end
         end
@@ -113,7 +118,7 @@ module Netconf
           raise RPCException("Failed to receive proper RPC reply")
         end
       end
-      nil
+      xml_retval
     end
 
     private
