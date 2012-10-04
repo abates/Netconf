@@ -1,4 +1,3 @@
-require 'netconf/string_methods'
 require 'netconf/device'
 require 'netconf/connection'
 
