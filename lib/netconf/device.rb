@@ -6,7 +6,6 @@ require 'xml'
 require 'netconf/connection_exception'
 require 'netconf/rpc_error'
 require 'netconf/rpc_exception'
-require 'netconf/string_methods'
 
 module Netconf
   class Device
